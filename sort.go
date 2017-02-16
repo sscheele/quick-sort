@@ -16,11 +16,12 @@ func main() {
 	}
 	test := strings.Split(string(str), "\n")
 	test = test[:len(test)-1]
-	var inputs = [3][]string{make([]string, len(test)), make([]string, len(test)), make([]string, len(test))}
+	var inputs = [4][]string{make([]string, len(test)), make([]string, len(test)), make([]string, len(test)), make([]string, len(test))}
 	for i := 0; i < len(test); i++ {
 		inputs[0][i] = test[i]
 		inputs[1][i] = test[i]
 		inputs[2][i] = test[i]
+		inputs[3][i] = test[i]
 	}
 	fmt.Println("Array length: ", len(test))
 
@@ -35,12 +36,17 @@ func main() {
 	fmt.Println("Combined sort completed in: ", time.Since(start))
 	fmt.Println("Verification of sort: ", verifySorted(tmp))
 	//fmt.Println("Sorted array: ", tmp)
-
+	/*
+		start = time.Now()
+		tmp = insertionSort(inputs[2])
+		fmt.Println("Insertion sort completed in: ", time.Since(start))
+		fmt.Println("Verification of sort: ", verifySorted(tmp))
+		//fmt.Println("Sorted array: ", tmp)
+	*/
 	start = time.Now()
-	tmp = insertionSort(inputs[2])
-	fmt.Println("Insertion sort completed in: ", time.Since(start))
-	fmt.Println("Verification of sort: ", verifySorted(tmp))
-	//fmt.Println("Sorted array: ", tmp)
+	quickSort(inputs[3])
+	fmt.Println("Quick sort completed in: ", time.Since(start))
+	fmt.Println("Verification of sort: ", verifySorted(inputs[3]))
 }
 
 func verifyEqual(a, b []string) bool {
@@ -146,4 +152,25 @@ func triage(arr []string, start int, stop int, index int) ([]string, int, int) {
 		arr[start+i] = sorted[i]
 	}
 	return arr, firstEqual, firstMax
+}
+
+func quickSort(values []string) {
+	quickSortHelper(values, 0, len(values)-1)
+}
+
+func quickSortHelper(values []string, l int, r int) {
+	if l >= r {
+		return
+	}
+	pivot := values[l]
+	i := l + 1
+	for j := l; j <= r; j++ {
+		if pivot > values[j] {
+			values[i], values[j] = values[j], values[i]
+			i++
+		}
+	}
+	values[l], values[i-1] = values[i-1], pivot
+	quickSortHelper(values, l, i-2)
+	quickSortHelper(values, i, r)
 }
