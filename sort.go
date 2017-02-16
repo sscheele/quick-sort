@@ -15,25 +15,38 @@ func main() {
 		return
 	}
 	test := strings.Split(string(str), "\n")
+	fmt.Println("Array length: ", len(test))
+
 	start := time.Now()
-	threeWayRadixSort(test)
+	tmp := threeWayRadixSort(test)
 	fmt.Println("Radix sort completed in: ", time.Since(start))
+	fmt.Println("Verification of sort: ", verifySorted(tmp))
+	fmt.Println("Sorted array: ", tmp)
+
 	start = time.Now()
-	combinedSort(test)
+	tmp = combinedSort(test)
 	fmt.Println("Combined sort completed in: ", time.Since(start))
+	fmt.Println("Verification of sort: ", verifySorted(tmp))
+	fmt.Println("Sorted array: ", tmp)
+
+	start = time.Now()
+	tmp = insertionSort(test)
+	fmt.Println("Insertion sort completed in: ", time.Since(start))
+	fmt.Println("Verification of sort: ", verifySorted(tmp))
+	fmt.Println("Sorted array: ", tmp)
 }
 
 func combinedSort(arr []string) []string {
 	maxDepth := int(math.Log(float64(len(arr))))
 	almostSorted := radixSortHelper(arr, 0, len(arr), 0, maxDepth)
-	return insertionSort(almostSorted, maxDepth)
+	return insertionSort(almostSorted)
 }
 
-func insertionSort(arr []string, maxDepth int) []string {
+func insertionSort(arr []string) []string {
 	for i := 1; i < len(arr); i++ {
 		key := arr[i]
 		j := i - 1
-		for j >= 0 && strCmp(arr[j], key, maxDepth) == 1 {
+		for j >= 0 && arr[j] > key {
 			arr[j+1] = arr[j]
 			j--
 		}
@@ -42,17 +55,13 @@ func insertionSort(arr []string, maxDepth int) []string {
 	return arr
 }
 
-//return 1 iff a > b, 0 iff a == b, -1 iff a < b
-func strCmp(a string, b string, i int) int {
-	for ; i < len(a) && i < len(b); i++ {
-		if a[i] > b[i] {
-			return 1
-		}
-		if b[i] > a[i] {
-			return -1
+func verifySorted(arr []string) bool {
+	for i := 0; i < len(arr)-1; i++ {
+		if arr[i+1] < arr[i] {
+			return false
 		}
 	}
-	return 0
+	return true
 }
 
 func threeWayRadixSort(arr []string) []string {
@@ -76,15 +85,11 @@ func radixSortHelper(arr []string, start int, stop int, index int, maxDepth int)
 //triage performs a radix sort based only on a letter index (stop is non-inclusive)
 //it returns the sorted array with, first element with an equal letter, and the first element with a larger letter
 func triage(arr []string, start int, stop int, index int) ([]string, int, int) {
-	sorted := make([]string, len(arr))
-	//sorted begins as a clone of arr
-	for i := 0; i < len(arr); i++ {
-		sorted[i] = arr[i]
-	}
-	var indices = [3]int{start, start, start}
-	var firstIndex int
+	sorted := make([]string, stop-start)
+	var indices [3]int
 
 	//set firstIndex to the first index such that index < len(arr[i])
+	var firstIndex int
 	for firstIndex = start; firstIndex < stop; firstIndex++ {
 		if index < len(arr[firstIndex]) {
 			break
@@ -101,25 +106,28 @@ func triage(arr []string, start int, stop int, index int) ([]string, int, int) {
 		if index >= len(arr[i]) || arr[i][index] < initialLetter {
 			//shorter strings come first alphabetically
 			indices[1]++
-			indices[2]++
 		} else if arr[i][index] == initialLetter {
 			indices[2]++
 		}
 	}
-	firstEqual := indices[1]
-	firstMax := indices[2]
+	indices[2] += indices[1]
+
+	firstEqual := indices[1] + start
+	firstMax := indices[2] + start
 
 	for i := start; i < stop; i++ {
+		toChange := 2
 		if index >= len(arr[i]) || arr[i][index] < initialLetter {
-			sorted[indices[0]] = arr[i]
-			indices[0]++
+			toChange = 0
 		} else if arr[i][index] == initialLetter {
-			sorted[indices[1]] = arr[i]
-			indices[1]++
-		} else {
-			sorted[indices[2]] = arr[i]
-			indices[2]++
+			toChange = 1
 		}
+		sorted[indices[toChange]] = arr[i]
+		indices[toChange]++
 	}
-	return sorted, firstEqual, firstMax
+
+	for i := 0; i < len(sorted); i++ {
+		arr[start+i] = sorted[i]
+	}
+	return arr, firstEqual, firstMax
 }
