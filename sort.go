@@ -15,29 +15,45 @@ func main() {
 		return
 	}
 	test := strings.Split(string(str), "\n")
+	test = test[:len(test)-1]
+	var inputs = [3][]string{make([]string, len(test)), make([]string, len(test)), make([]string, len(test))}
+	for i := 0; i < len(test); i++ {
+		inputs[0][i] = test[i]
+		inputs[1][i] = test[i]
+		inputs[2][i] = test[i]
+	}
 	fmt.Println("Array length: ", len(test))
 
 	start := time.Now()
-	tmp := threeWayRadixSort(test)
+	tmp := threeWayRadixSort(inputs[0])
 	fmt.Println("Radix sort completed in: ", time.Since(start))
 	fmt.Println("Verification of sort: ", verifySorted(tmp))
-	fmt.Println("Sorted array: ", tmp)
+	//fmt.Println("Sorted array: ", tmp)
 
 	start = time.Now()
-	tmp = combinedSort(test)
+	tmp = combinedSort(inputs[1])
 	fmt.Println("Combined sort completed in: ", time.Since(start))
 	fmt.Println("Verification of sort: ", verifySorted(tmp))
-	fmt.Println("Sorted array: ", tmp)
+	//fmt.Println("Sorted array: ", tmp)
 
 	start = time.Now()
-	tmp = insertionSort(test)
+	tmp = insertionSort(inputs[2])
 	fmt.Println("Insertion sort completed in: ", time.Since(start))
 	fmt.Println("Verification of sort: ", verifySorted(tmp))
-	fmt.Println("Sorted array: ", tmp)
+	//fmt.Println("Sorted array: ", tmp)
+}
+
+func verifyEqual(a, b []string) bool {
+	for i := 0; i < len(a); i++ {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 func combinedSort(arr []string) []string {
-	maxDepth := int(math.Log(float64(len(arr))))
+	maxDepth := int(math.Log(float64(len(arr))) / 3.26) //note: using 3.26 because it's roughly log(26), where 26 is the size of our character space
 	almostSorted := radixSortHelper(arr, 0, len(arr), 0, maxDepth)
 	return insertionSort(almostSorted)
 }
@@ -69,7 +85,7 @@ func threeWayRadixSort(arr []string) []string {
 }
 
 func radixSortHelper(arr []string, start int, stop int, index int, maxDepth int) []string {
-	if start == stop || (maxDepth != -1 && maxDepth >= index) {
+	if start == stop || (maxDepth != -1 && index >= maxDepth) {
 		return arr
 	}
 	retVal, newStart, newStop := triage(arr, start, stop, index)
