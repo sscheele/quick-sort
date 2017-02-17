@@ -16,25 +16,29 @@ func main() {
 	}
 	test := strings.Split(string(str), "\n")
 	test = test[:len(test)-1]
-	var inputs = [4][]string{make([]string, len(test)), make([]string, len(test)), make([]string, len(test)), make([]string, len(test))}
+	var inputs = [4][]string{make([]string, len(test)), make([]string, len(test)), make([]string, len(test))}
 	for i := 0; i < len(test); i++ {
 		inputs[0][i] = test[i]
 		inputs[1][i] = test[i]
 		inputs[2][i] = test[i]
-		inputs[3][i] = test[i]
 	}
 	fmt.Println("Array length: ", len(test))
 
 	start := time.Now()
-	tmp := threeWayRadixSort(inputs[0])
+	quickSort(inputs[2])
+	fmt.Println("Quick sort completed in: ", time.Since(start))
+	fmt.Println("Verification of sort: ", verifySorted(inputs[2]))
+
+	start = time.Now()
+	threeWayRadixSort(inputs[0])
 	fmt.Println("Radix sort completed in: ", time.Since(start))
-	fmt.Println("Verification of sort: ", verifySorted(tmp))
+	fmt.Println("Verification of sort: ", verifySorted(inputs[0]))
 	//fmt.Println("Sorted array: ", tmp)
 
 	start = time.Now()
-	tmp = combinedSort(inputs[1])
+	combinedSort(inputs[1])
 	fmt.Println("Combined sort completed in: ", time.Since(start))
-	fmt.Println("Verification of sort: ", verifySorted(tmp))
+	fmt.Println("Verification of sort: ", verifySorted(inputs[1]))
 	//fmt.Println("Sorted array: ", tmp)
 	/*
 		start = time.Now()
@@ -43,10 +47,6 @@ func main() {
 		fmt.Println("Verification of sort: ", verifySorted(tmp))
 		//fmt.Println("Sorted array: ", tmp)
 	*/
-	start = time.Now()
-	quickSort(inputs[3])
-	fmt.Println("Quick sort completed in: ", time.Since(start))
-	fmt.Println("Verification of sort: ", verifySorted(inputs[3]))
 }
 
 func verifyEqual(a, b []string) bool {
@@ -58,14 +58,18 @@ func verifyEqual(a, b []string) bool {
 	return true
 }
 
-func combinedSort(arr []string) []string {
+func combinedSort(arr []string) {
 	maxDepth := int(math.Log(float64(len(arr))) / 3.26) //note: using 3.26 because it's roughly log(26), where 26 is the size of our character space
-	almostSorted := radixSortHelper(arr, 0, len(arr), 0, maxDepth)
-	return insertionSort(almostSorted)
+	radixSortHelper(arr, 0, len(arr), 0, maxDepth)
+	insertionSort(arr)
 }
 
-func insertionSort(arr []string) []string {
-	for i := 1; i < len(arr); i++ {
+func insertionSort(arr []string) {
+	insertionSortHelper(arr, 0, len(arr))
+}
+
+func insertionSortHelper(arr []string, start int, stop int) {
+	for i := start + 1; i < stop; i++ {
 		key := arr[i]
 		j := i - 1
 		for j >= 0 && arr[j] > key {
@@ -74,7 +78,6 @@ func insertionSort(arr []string) []string {
 		}
 		arr[j+1] = key
 	}
-	return arr
 }
 
 func verifySorted(arr []string) bool {
@@ -86,30 +89,28 @@ func verifySorted(arr []string) bool {
 	return true
 }
 
-func threeWayRadixSort(arr []string) []string {
-	return radixSortHelper(arr, 0, len(arr), 0, -1)
+func threeWayRadixSort(arr []string) {
+	radixSortHelper(arr, 0, len(arr), 0, -1)
 }
 
-func radixSortHelper(arr []string, start int, stop int, index int, maxDepth int) []string {
+func radixSortHelper(arr []string, start int, stop int, index int, maxDepth int) {
 	if start == stop || (maxDepth != -1 && index >= maxDepth) {
-		return arr
+		return
 	}
-	retVal, newStart, newStop := triage(arr, start, stop, index)
+	newStart, newStop := triage(arr, start, stop, index)
 	if newStart == -1 && newStop == -1 {
-		return arr
+		return
 	}
-	retVal = radixSortHelper(retVal, start, newStart, index, maxDepth)     //sort the lesser array
-	retVal = radixSortHelper(retVal, newStart, newStop, index+1, maxDepth) //sort the equal array on the basis of the next
-	retVal = radixSortHelper(retVal, newStop, stop, index, maxDepth)       //sort the greater array
-	return retVal
+	radixSortHelper(arr, start, newStart, index, maxDepth)     //sort the lesser array
+	radixSortHelper(arr, newStart, newStop, index+1, maxDepth) //sort the equal array on the basis of the next
+	radixSortHelper(arr, newStop, stop, index, maxDepth)       //sort the greater array
 }
 
-//triage performs a radix sort based only on a letter index (stop is non-inclusive)
+//triage performs an in-place radix sort based only on a letter index (stop is non-inclusive)
 //it returns the sorted array with, first element with an equal letter, and the first element with a larger letter
-func triage(arr []string, start int, stop int, index int) ([]string, int, int) {
+func triage(arr []string, start int, stop int, index int) (int, int) {
 	sorted := make([]string, stop-start)
 	var indices [3]int
-
 	//set firstIndex to the first index such that index < len(arr[i])
 	var firstIndex int
 	for firstIndex = start; firstIndex < stop; firstIndex++ {
@@ -119,7 +120,7 @@ func triage(arr []string, start int, stop int, index int) ([]string, int, int) {
 	}
 	if firstIndex == stop {
 		//there are no words with letters at index, simply return arr
-		return arr, -1, -1
+		return -1, -1
 	}
 
 	//initialize an index array for the radix sort
@@ -151,7 +152,7 @@ func triage(arr []string, start int, stop int, index int) ([]string, int, int) {
 	for i := 0; i < len(sorted); i++ {
 		arr[start+i] = sorted[i]
 	}
-	return arr, firstEqual, firstMax
+	return firstEqual, firstMax
 }
 
 func quickSort(values []string) {
