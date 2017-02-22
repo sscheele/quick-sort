@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
-	"math"
 	"strings"
 	"time"
 )
@@ -12,62 +11,7 @@ import (
 type MyString string
 
 func main() {
-	//trainGE()
 	compareSorts()
-}
-
-func trainGE() {
-	str, err := ioutil.ReadFile("/home/sam/Projects/go/src/github.com/sscheele/quick-sort/test.dat")
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-	test := strings.Split(string(str), "\n")
-	test = test[:len(test)-1]
-
-	for j := 0; j < 3; j++ {
-		throwAway := make([]MyString, len(test))
-		for i := 0; i < len(test); i++ {
-			throwAway[i] = MyString(test[i])
-		}
-		combinedSort(throwAway)
-	}
-	alpha := .1
-	divVal := 4.0
-	for {
-		if time.Now().UnixNano()%100 == 0 {
-			alpha *= 4 //get out of sticking points
-		}
-		fmt.Println("DivVal: ", divVal)
-		var inputs = [3][]MyString{make([]MyString, len(test)), make([]MyString, len(test)), make([]MyString, len(test))}
-		for i := 0; i < len(test); i++ {
-			inputs[0][i] = MyString(test[i])
-			inputs[1][i] = MyString(test[i])
-			inputs[2][i] = MyString(test[i])
-		}
-		start := time.Now()
-		cSortTrain(inputs[0], divVal-alpha)
-		sinceLow := time.Since(start)
-
-		start = time.Now()
-		cSortTrain(inputs[1], divVal+alpha)
-		sinceHigh := time.Since(start)
-
-		start = time.Now()
-		cSortTrain(inputs[2], divVal)
-		sinceBase := time.Since(start)
-
-		if sinceHigh > sinceLow && sinceHigh > sinceBase {
-			divVal += alpha
-			continue
-		}
-		if sinceLow > sinceHigh && sinceLow > sinceBase {
-			divVal -= alpha
-			continue
-		}
-		//base is the greatest, lower alpha
-		alpha = alpha / 2.0
-	}
 }
 
 func compareSorts() {
@@ -106,7 +50,7 @@ func compareSorts() {
 	combinedSort(inputs[1])
 	fmt.Println("Combined sort completed in: ", time.Since(start))
 	fmt.Println("Verification of sort: ", verifySorted(inputs[1]))
-	//fmt.Println("Sorted array: ", tmp)
+	//fmt.Println("Sorted array: ", inputs[1])
 
 }
 
@@ -120,13 +64,8 @@ func verifyEqual(a, b []MyString) bool {
 }
 
 func combinedSort(arr []MyString) {
-	maxDepth := int(math.Log(float64(len(arr))) / 3.26) //note: using 3.26 because it's roughly log(26), where 26 is the size of our character space
-	radixSortHelper(arr, 0, len(arr)-1, 0, maxDepth)
-}
-
-func cSortTrain(arr []MyString, x float64) {
-	maxDepth := int(math.Log(float64(len(arr))) / x)
-	radixSortHelper(arr, 0, len(arr)-1, 0, maxDepth)
+	//maxDepth := int(math.Log(float64(len(arr))) / 3.26) //note: using 3.26 because it's roughly log(26), where 26 is the size of our character space
+	myRadixSortHelper(arr, 0, len(arr)-1, 0)
 }
 
 func insertionSort(arr []MyString) {
@@ -155,10 +94,10 @@ func verifySorted(arr []MyString) bool {
 }
 
 func threeWayRadixSort(arr []MyString) {
-	radixSortHelper(arr, 0, len(arr)-1, 0, -1)
+	radixSortHelper(arr, 0, len(arr)-1, 0)
 }
 
-func radixSortHelper(arr []MyString, start int, stop int, index int, maxChar int) {
+func radixSortHelper(arr []MyString, start int, stop int, index int) {
 	if start >= stop {
 		return
 	}
@@ -167,7 +106,7 @@ func radixSortHelper(arr []MyString, start int, stop int, index int, maxChar int
 		gt  = stop
 		key = arr[start].charAt(index)
 	)
-	if stop <= start+3 || (maxChar != -1 && index >= maxChar) {
+	if stop <= start+3 {
 		insertionSortHelper(arr, start, stop)
 		return
 	}
@@ -183,11 +122,57 @@ func radixSortHelper(arr []MyString, start int, stop int, index int, maxChar int
 		}
 		i++
 	}
-	radixSortHelper(arr, start, lt-1, index, maxChar)
+	radixSortHelper(arr, start, lt-1, index)
 	if key >= 0 {
-		radixSortHelper(arr, lt, gt, index+1, maxChar)
+		radixSortHelper(arr, lt, gt, index+1)
 	}
-	radixSortHelper(arr, gt+1, stop, index, maxChar)
+	radixSortHelper(arr, gt+1, stop, index)
+}
+
+func myRadixSortHelper(arr []MyString, start int, stop int, index int) {
+	if start >= stop {
+		return
+	}
+	var (
+		lt  = start
+		gt  = stop
+		key = arr[start].charAt(index)
+		eq  []MyString
+	)
+	if stop <= start+3 {
+		insertionSortHelper(arr, start, stop)
+		return
+	}
+	for i := start; i <= gt; {
+		item := arr[i]
+		//can't fucking implement recursion properly because of anonymous functions
+		for len(eq)+lt-gt != 1 {
+			t := item.charAt(index)
+			if t == key {
+				eq = append(eq, item)
+				i++
+				break
+			} else if t > key {
+				tmp := arr[gt]
+				arr[gt] = item
+				item = tmp
+				gt--
+			} else {
+				arr[lt] = item
+				lt++
+				i++
+				break
+			}
+		}
+	}
+	for i := range eq {
+		arr[lt+i] = eq[i]
+	}
+	myRadixSortHelper(arr, start, lt-1, index)
+	if key >= 0 {
+		myRadixSortHelper(arr, lt, gt, index+1)
+	}
+	myRadixSortHelper(arr, gt+1, stop, index)
 }
 
 func exchange(a []MyString, i int, j int) {
