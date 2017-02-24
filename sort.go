@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"math"
 	"strings"
 	"time"
 )
@@ -22,12 +23,13 @@ func compareSorts() {
 	}
 	test := strings.Split(string(str), "\n")
 	test = test[:len(test)-1]
-	var inputs = [4][]MyString{make([]MyString, len(test)), make([]MyString, len(test)), make([]MyString, len(test)), make([]MyString, len(test))}
+	var inputs = [5][]MyString{make([]MyString, len(test)), make([]MyString, len(test)), make([]MyString, len(test)), make([]MyString, len(test)), make([]MyString, len(test))}
 	for i := 0; i < len(test); i++ {
 		inputs[0][i] = MyString(test[i])
 		inputs[1][i] = MyString(test[i])
 		inputs[2][i] = MyString(test[i])
 		inputs[3][i] = MyString(test[i])
+		inputs[4][i] = MyString(test[i])
 	}
 	fmt.Println("Array length: ", len(test))
 
@@ -52,6 +54,10 @@ func compareSorts() {
 	fmt.Println("Verification of sort: ", verifySorted(inputs[1]))
 	//fmt.Println("Sorted array: ", inputs[1])
 
+	start = time.Now()
+	mySort(inputs[4])
+	fmt.Println("Other sort completed in: ", time.Since(start))
+	fmt.Println("Verification of sort: ", verifySorted(inputs[4]))
 }
 
 func verifyEqual(a, b []MyString) bool {
@@ -64,7 +70,11 @@ func verifyEqual(a, b []MyString) bool {
 }
 
 func combinedSort(arr []MyString) {
-	//maxDepth := int(math.Log(float64(len(arr))) / 3.26) //note: using 3.26 because it's roughly log(26), where 26 is the size of our character space
+	maxDepth := int(math.Log(float64(len(arr))) / 3.26) //note: using 3.26 because it's roughly log(26), where 26 is the size of our character space
+	combinedSortHelper(arr, 0, len(arr)-1, 0, maxDepth)
+}
+
+func mySort(arr []MyString) {
 	myRadixSortHelper(arr, 0, len(arr)-1, 0)
 }
 
@@ -127,6 +137,38 @@ func radixSortHelper(arr []MyString, start int, stop int, index int) {
 		radixSortHelper(arr, lt, gt, index+1)
 	}
 	radixSortHelper(arr, gt+1, stop, index)
+}
+
+func combinedSortHelper(arr []MyString, start int, stop int, index int, maxDepth int) {
+	if start >= stop {
+		return
+	}
+	var (
+		lt  = start
+		gt  = stop
+		key = arr[start].charAt(index)
+	)
+	if stop <= start+3 || index >= maxDepth {
+		insertionSortHelper(arr, start, stop)
+		return
+	}
+	for i := start + 1; i <= gt; {
+		t := arr[i].charAt(index)
+		if t < key {
+			exchange(arr, lt, i)
+			lt++
+		} else if t > key {
+			exchange(arr, i, gt)
+			gt--
+			continue
+		}
+		i++
+	}
+	combinedSortHelper(arr, start, lt-1, index, maxDepth)
+	if key >= 0 {
+		combinedSortHelper(arr, lt, gt, index+1, maxDepth)
+	}
+	combinedSortHelper(arr, gt+1, stop, index, maxDepth)
 }
 
 func myRadixSortHelper(arr []MyString, start int, stop int, index int) {
